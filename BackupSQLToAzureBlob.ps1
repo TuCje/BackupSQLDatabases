@@ -1,21 +1,39 @@
-## Setting some Variables
+# Setting the mailserver Variables
 $From = ""
 $To = ""
-#$Bcc = ""
+$Bcc = ""
 $SMTPServer = ""
 $Body = "Backup succesful, see below: <br> "
+$Subject = ""
+$MailUsr = ""
+$Port = ""
+$MailPwd = ""| ConvertTo-SecureString -AsPlainText -Force
+$MailCred = New-Object System.Management.Automation.PsCredential($MailUsr,$MailPwd)
+
+#Set the current Date
 $Datum = get-date -format "dd-MM-yyyy-HH-mm"
-$serverinstance1 = 
-$serverinstance2 = 
-$serverinstance3 =
 
 #Setting up the Drive to Azure under the account the script is running
 $pass="$blobpass"| ConvertTo-SecureString -AsPlainText -Force
 $Cred = New-Object System.Management.Automation.PsCredential('localhost\$bloblogin',$pass)
-New-PSDrive -name W -Root #Path on blob storage -Credential $cred -PSProvider filesystem -ErrorAction SilentlyContinue
+New-PSDrive -name W -Root -Credential $Cred -PSProvider filesystem -ErrorAction SilentlyContinue
 
 # Get the databases
 $DatabasesInstance1 = Get-SqlDatabase -ServerInstance $serverinstance1
+
+function MakeBackup {
+    param (
+        $serverinstance,
+        $SQLdatabase
+    )
+    Backup-SqlDatabase -ServerInstance "$serverinstance" -Database "$database" -BackupFile "$location\DB-$serverinstance1-$database-$Datum.bak"
+    Backup-SqlDatabase -ServerInstance "$serverinstance" -Database "$database" -BackupFile "$location\LOG-$serverinstance1-$database-$Datum.bak" -BackupAction Log
+
+
+    
+}
+
+
 
 # Make the backups of Databases in Instance1
 ForEach ($database in $DatabasesInstance1) {
@@ -53,4 +71,4 @@ cmd.exe /c "7z.exe a -t7z $location\$serverinstance1-$database-$Datum.7z -m0=lzm
        }
 }
 
-Send-MailMessage -From $From -To $To -Bcc $Bcc -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $SMTPServer
+Send-MailMessage -From $From -To $To -Bcc $Bcc -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $SMTPServer -Credential $MailCred -Port $Port

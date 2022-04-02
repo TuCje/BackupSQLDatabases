@@ -1,3 +1,3 @@
 # BackupSQLDatabases
 
-Test Github
+Work in progress. rewriting with functions
